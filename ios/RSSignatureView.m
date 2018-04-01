@@ -19,6 +19,8 @@
 	BOOL _showBorder;
 	BOOL _showNativeButtons;
 	BOOL _showTitleLabel;
+    NSString *_viewMode;
+    NSString *_nativeTitle;
 }
 
 @synthesize sign;
@@ -68,13 +70,13 @@
 
 		[self addSubview:sign];
 
-		if ( UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad ) {
+		if ( [_viewMode  isEqual: @"portrait"] || UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad ) {
 
 			if (_showTitleLabel) {
 				titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.bounds.size.width, 24)];
 				[titleLabel setCenter:CGPointMake(self.bounds.size.width/2, self.bounds.size.height - 120)];
 
-				[titleLabel setText:@"x_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _"];
+				[titleLabel setText:_nativeTitle];
 				[titleLabel setLineBreakMode:NSLineBreakByClipping];
 				[titleLabel setTextAlignment: NSTextAlignmentCenter];
 				[titleLabel setTextColor:[UIColor colorWithRed:200/255.f green:200/255.f blue:200/255.f alpha:1.f]];
@@ -114,13 +116,17 @@
 
 			if (_showTitleLabel) {
 				titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.bounds.size.height - 80, 24)];
-				[titleLabel setCenter:CGPointMake(40, self.bounds.size.height/2)];
+                [titleLabel setCenter:CGPointMake(40, self.bounds.size.height/2)];
 				[titleLabel setTransform:CGAffineTransformMakeRotation(DEGREES_TO_RADIANS(90))];
-				[titleLabel setText:@"x_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _"];
+				[titleLabel setText:_nativeTitle];
+                [titleLabel setFont:[UIFont systemFontOfSize:24]];
 				[titleLabel setLineBreakMode:NSLineBreakByClipping];
 				[titleLabel setTextAlignment: NSTextAlignmentLeft];
-				[titleLabel setTextColor:[UIColor colorWithRed:200/255.f green:200/255.f blue:200/255.f alpha:1.f]];
-				//[titleLabel setBackgroundColor:[UIColor greenColor]];
+				[titleLabel setTextColor:[UIColor colorWithRed:255/255.f green:255/255.f blue:255/255.f alpha:1.f]];
+                CGSize titleSize = CGSizeMake(55, sign.bounds.size.height);
+                
+                [titleLabel setBackgroundColor:[UIColor blackColor]];
+                titleLabel.frame = CGRectMake(sign.bounds.size.width - titleSize.width, 0, titleSize.width, titleSize.height);
 				[sign addSubview:titleLabel];
 			}
 
@@ -133,10 +139,10 @@
 				            forControlEvents:UIControlEventTouchUpInside];
 				[saveButton setTitle:@"Save" forState:UIControlStateNormal];
 
-				CGSize buttonSize = CGSizeMake(55, 80.0); //Width/Height is swapped
+				CGSize buttonSize = CGSizeMake(55, (sign.bounds.size.height - 5.0)/2.0f); //Width/Height is swapped
 
-				saveButton.frame = CGRectMake(sign.bounds.size.width - buttonSize.width, sign.bounds.size.height - buttonSize.height, buttonSize.width, buttonSize.height);
-				[saveButton setBackgroundColor:[UIColor colorWithRed:250/255.f green:250/255.f blue:250/255.f alpha:1.f]];
+				saveButton.frame = CGRectMake(0, sign.bounds.size.height - buttonSize.height, buttonSize.width, buttonSize.height);
+				[saveButton setBackgroundColor:[UIColor colorWithRed:235/255.f green:203/255.f blue:106/255.f alpha:1.f]];
 				[sign addSubview:saveButton];
 
 				//Clear button
@@ -147,8 +153,8 @@
 				             forControlEvents:UIControlEventTouchUpInside];
 				[clearButton setTitle:@"Reset" forState:UIControlStateNormal];
 
-				clearButton.frame = CGRectMake(sign.bounds.size.width - buttonSize.width, 0, buttonSize.width, buttonSize.height);
-				[clearButton setBackgroundColor:[UIColor colorWithRed:250/255.f green:250/255.f blue:250/255.f alpha:1.f]];
+				clearButton.frame = CGRectMake(0, 0, buttonSize.width, buttonSize.height);
+				[clearButton setBackgroundColor:[UIColor colorWithRed:235/255.f green:203/255.f blue:106/255.f alpha:1.f]];
 				[sign addSubview:clearButton];
 			}
 		}
@@ -174,6 +180,16 @@
 - (void)setShowNativeButtons:(BOOL)showNativeButtons {
 	_showNativeButtons = showNativeButtons;
 }
+
+- (void)setViewMode:(NSString *)viewMode {
+    _viewMode = viewMode;
+}
+
+
+- (void)setNativeTitle:(NSString *)nativeTitle {
+    _nativeTitle = nativeTitle;
+}
+
 
 - (void)setShowTitleLabel:(BOOL)showTitleLabel {
 	_showTitleLabel = showTitleLabel;
@@ -212,10 +228,14 @@
 		NSFileManager *man = [NSFileManager defaultManager];
 		NSDictionary *attrs = [man attributesOfItemAtPath:tempPath error: NULL];
 		//UInt32 result = [attrs fileSize];
+        
+        NSURL *fileURL = [NSURL fileURLWithPath:tempPath];
+        NSString *filePath = [fileURL absoluteString];
 
 		NSString *base64Encoded = [imageData base64EncodedStringWithOptions:0];
-		[self.manager publishSaveImageEvent: tempPath withEncoded:base64Encoded];
+        [self.manager publishSaveImageEvent: tempPath withEncoded:base64Encoded andwithUri:filePath];
 	}
+    
 }
 
 -(void) onClearButtonPressed {

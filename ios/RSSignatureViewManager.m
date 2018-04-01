@@ -14,6 +14,8 @@ RCT_EXPORT_VIEW_PROPERTY(rotateClockwise, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(square, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(showBorder, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(showNativeButtons, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(viewMode, NSString *)
+RCT_EXPORT_VIEW_PROPERTY(nativeTitle, NSString *)
 RCT_EXPORT_VIEW_PROPERTY(showTitleLabel, BOOL)
 
 
@@ -43,11 +45,12 @@ RCT_EXPORT_METHOD(resetImage:(nonnull NSNumber *)reactTag) {
 	});
 }
 
--(void) publishSaveImageEvent:(NSString *) aTempPath withEncoded: (NSString *) aEncoded {
+-(void) publishSaveImageEvent:(NSString *) aTempPath withEncoded: (NSString *) aEncoded andwithUri: (NSString *) url {
 	[self.bridge.eventDispatcher
 	 sendDeviceEventWithName:@"onSaveEvent"
 	 body:@{
 					@"pathName": aTempPath,
+                    @"uri": url,
 					@"encoded": aEncoded
 					}];
 }
