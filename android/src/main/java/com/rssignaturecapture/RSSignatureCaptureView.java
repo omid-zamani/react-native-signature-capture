@@ -2,10 +2,6 @@ package com.rssignaturecapture;
 
 import android.content.Context;
 
-import android.content.res.Resources;
-import android.content.res.TypedArray;
-
-import android.util.Log;
 import android.view.View;
 import android.view.MotionEvent;
 
@@ -51,8 +47,7 @@ public class RSSignatureCaptureView extends View {
 	private Canvas mSignatureBitmapCanvas = null;
 	private SignatureCallback callback;
 	private boolean dragged = false;
-	private boolean multipleTouchDragged = false;
-	private int SCROLL_THRESHOLD = 5;
+	private int SCROLL_THRESHOLD = 50;
 
 	public interface SignatureCallback {
 		void onDragged();
@@ -87,30 +82,33 @@ public class RSSignatureCaptureView extends View {
 	}
 
 	/**
-	* Get signature
-	*
-	* @return
-	*/
+	 * Get signature as a Bitmap
+	 */
 	public Bitmap getSignature() {
+		// Initialize a Bitmap to contain the signature
+		Bitmap signatureBitmap = Bitmap.createBitmap(this.getWidth(), this.getHeight(), Bitmap.Config.ARGB_8888);
 
-		Bitmap signatureBitmap = null;
-
-		// set the signature bitmap
-		if (signatureBitmap == null) {
-			signatureBitmap = Bitmap.createBitmap(this.getWidth(), this.getHeight(), Bitmap.Config.RGB_565);
-		}
-
-		// important for saving signature
+		// This view's pixels constitute the signature, so draw this view onto the signatureBitmap
 		final Canvas canvas = new Canvas(signatureBitmap);
 		this.draw(canvas);
+
+		// The signatureBitmap now contains the signature with a white background,
+		// so we will change it to a transparent background.
+		for (int x = 0; x < signatureBitmap.getWidth(); x++) {
+			for (int y = 0; y < signatureBitmap.getHeight(); y++) {
+				if (Color.WHITE == signatureBitmap.getPixel(x, y)) {
+					signatureBitmap.setPixel(x, y, Color.TRANSPARENT);
+				}
+			}
+		}
 
 		return signatureBitmap;
 	}
 
 
 	/**
-	* clear signature canvas
-	*/
+	 * clear signature canvas
+	 */
 	public void clearSignature() {
 		clear();
 	}
@@ -198,18 +196,6 @@ public class RSSignatureCaptureView extends View {
 		}
 	}
 
-	public void setMinStrokeWidth(int minStrokeWidth) {
-		mMinWidth = minStrokeWidth;
-	}
-
-	public void setMaxStrokeWidth(int maxStrokeWidth) {
-		mMaxWidth = maxStrokeWidth;
-	}
-
-	public void setStrokeColor(int color) {
-		mPaint.setColor(color);
-	}
-
 	private float strokeWidth(float velocity) {
 		return Math.max(mMaxWidth / (velocity + 1), mMinWidth);
 	}
@@ -239,42 +225,35 @@ public class RSSignatureCaptureView extends View {
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if (!isEnabled() || event.getPointerCount() > 1 || (multipleTouchDragged && event.getAction() != MotionEvent.ACTION_UP)) {
-		    multipleTouchDragged = true;
+		if (!isEnabled())
 			return false;
-		}
 
 		float eventX = event.getX();
 		float eventY = event.getY();
 
 		switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
-                mLastTouchX = eventX;
-                mLastTouchY = eventY;
 				getParent().requestDisallowInterceptTouchEvent(true);
 				mPoints.clear();
 				mPath.moveTo(eventX, eventY);
+				mLastTouchX = eventX;
+				mLastTouchY = eventY;
 				addPoint(new TimedPoint(eventX, eventY));
 
 			case MotionEvent.ACTION_MOVE:
-                if((Math.abs(mLastTouchX - eventX) < SCROLL_THRESHOLD || Math.abs(mLastTouchY - eventY) < SCROLL_THRESHOLD) && dragged) {
-                    return false;
-                }
 				resetDirtyRect(eventX, eventY);
 				addPoint(new TimedPoint(eventX, eventY));
-                dragged = true;
+				if((Math.abs(mLastTouchX - eventX) > SCROLL_THRESHOLD || Math.abs(mLastTouchY - eventY) > SCROLL_THRESHOLD)){
+					dragged = true;
+				}
 				break;
 
 			case MotionEvent.ACTION_UP:
-			    if(mPoints.size() >= 3) {
-                    resetDirtyRect(eventX, eventY);
-                    addPoint(new TimedPoint(eventX, eventY));
-                    getParent().requestDisallowInterceptTouchEvent(true);
-                    setIsEmpty(false);
-                    sendDragEventToReact();
-			    }
-                dragged = false;
-                multipleTouchDragged = false;
+				resetDirtyRect(eventX, eventY);
+				addPoint(new TimedPoint(eventX, eventY));
+				getParent().requestDisallowInterceptTouchEvent(true);
+				setIsEmpty(false);
+				sendDragEventToReact();
 				break;
 
 			default:

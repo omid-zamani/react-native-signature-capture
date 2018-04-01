@@ -1,5 +1,6 @@
 package com.rssignaturecapture;
 
+import android.net.Uri;
 import android.util.Log;
 import android.view.ViewGroup;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -57,10 +58,6 @@ public class RSSignatureCaptureMainView extends LinearLayout implements OnClickL
 
     setLayoutParams(new android.view.ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
         ViewGroup.LayoutParams.MATCH_PARENT));
-  }
-
-  public RSSignatureCaptureView getSignatureView() {
-    return signatureView;
   }
 
   public void setSaveFileInExtStorage(Boolean saveFileInExtStorage) {
@@ -178,8 +175,13 @@ public class RSSignatureCaptureMainView extends LinearLayout implements OnClickL
       byte[] byteArray = byteArrayOutputStream.toByteArray();
       String encoded = Base64.encodeToString(byteArray, Base64.DEFAULT);
 
+      Uri uri = Uri.fromFile(new File(root + "/saved_signature/signature.png"));
+
       WritableMap event = Arguments.createMap();
       event.putString("pathName", file.getAbsolutePath());
+      event.putString("uri", uri.toString());
+      event.putString("fileName", file.getName());
+      event.putString("type", "PNG");
       event.putString("encoded", encoded);
       ReactContext reactContext = (ReactContext) getContext();
       reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "topChange", event);
